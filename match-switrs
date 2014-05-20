@@ -36,6 +36,7 @@ close(IN);
 for $where (keys(%walk)) {
 	$walk{$where} /= $count{$where};
 	$drive{$where} /= $count{$where};
+	$crash{$where} = 0;
 	delete $count{$where};
 
 	# print "$where $walk{$where} $drive{$where}\n";
