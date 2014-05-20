@@ -1,0 +1,91 @@
+#!/usr/bin/perl
+
+$pi = 4 * atan2(1, 1);
+$foot = .00000274;
+$bucket = 150 * $foot;
+
+open(IN, "la-walk");
+while (<IN>) {
+	chomp;
+
+	($file, $name, $id, $date, $time, @fields) = split(/,/);
+
+	$walk = $fields[12] + $fields[13] + $fields[14] + $fields[15];
+
+	$thru = $fields[1] + $fields[4] + $fields[7] + $fields[10];
+	$turn = $fields[0] + $fields[2] + $fields[3] + $fields[5] + $fields[6] + $fields[8] + $fields[9] + $fields[11];
+
+	$drive = 0;
+	for ($i = 0; $i < 12; $i++) {
+		$drive += $fields[$i];
+	}
+
+	$lat = $fields[20];
+	$lon = $fields[21];
+
+	if ($walk > 0 && $drive > 0 && $lat ne "") {
+		$walk{"$lat,$lon"} += $walk;
+		$drive{"$lat,$lon"} += $drive;
+		$thru{"$lat,$lon"} += $thru;
+		$turn{"$lat,$lon"} += $turn;
+		$count{"$lat,$lon"}++;
+	}
+}
+close(IN);
+
+for $where (keys(%walk)) {
+	$walk{$where} /= $count{$where};
+	$drive{$where} /= $count{$where};
+	delete $count{$where};
+
+	# print "$where $walk{$where} $drive{$where}\n";
+
+	($lat, $lon) = split(/,/, $where);
+	$ilat = int($lat / $bucket);
+	$ilon = int($lon / $bucket);
+
+	push @{$check{$ilat}{$ilon}}, $where;
+}
+
+open(IN, "pedestrian");
+while (<IN>) {
+	chomp;
+	($where, $slash, $injury, $death) = split(/ /);
+
+	($lat, $lon) = split(/,/, $where);
+	$ilat = int($lat / $bucket);
+	$ilon = int($lon / $bucket);
+	$rat = cos($lat * $pi / 180);
+
+	@try = ();
+	for ($a = $ilat - 1; $a <= $ilat + 1; $a++) {
+		for ($o = $ilon - 1; $o <= $ilon + 1; $o++) {
+			for $pt (@{$check{$a}{$o}}) {
+				push @try, $pt;
+			}
+		}
+	}
+
+	if ($#try >= 0) {
+		$best = 0;
+		$bestd = 360;
+
+		for $t (@try) {
+			($a, $o) = split(/,/, $t);
+
+			$latd = $lat - $a;
+			$lond = ($lon - $o) * $rat;
+			$d = sqrt($latd * $latd + $lond * $lond);
+			if ($d < $bestd) {
+				$bestd = $d;
+				$best = $t;
+			}
+		}
+
+		$crash{$best} += $death + $injury;
+	}
+}
+
+for $where (keys(%crash)) {
+	print "$where $walk{$where} $drive{$where} $thru{$where} $turn{$where} $crash{$where}\n";
+}
