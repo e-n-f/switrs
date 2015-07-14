@@ -48,10 +48,19 @@ for $where (keys(%walk)) {
 	push @{$check{$ilat}{$ilon}}, $where;
 }
 
-open(IN, "pedestrian");
+open(IN, "unzip -c SWITRS_03_11_CSV.zip Collisions03to11.csv |");
 while (<IN>) {
 	chomp;
-	($where, $slash, $injury, $death) = split(/ /);
+	@fields = split(/,/);
+	$where = "$fields[2],$fields[1]";
+	$injury = $fields[71];
+	$death = $fields[70];
+
+	$p = int($seq++ * 100 / 1665117);
+	if ($p != $op) {
+		print STDERR "$p\r";
+		$op = $p;
+	}
 
 	($lat, $lon) = split(/,/, $where);
 	$ilat = int($lat / $bucket);
