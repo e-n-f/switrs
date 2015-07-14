@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cat ../traffic/la-traffic-counts/counts*csv | ../traffic/kc-traffic-counts/scale-24-hour | ../traffic/kc-traffic-counts/sum-walk | sort -rn > la-walk
+cat ../traffic/la-traffic-counts/counts*csv | ../traffic/kc-traffic-counts/estimate-peak-hour -24 | ../traffic/kc-traffic-counts/sum-walk | sort -rn > la-walk
